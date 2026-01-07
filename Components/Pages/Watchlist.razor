@@ -1,0 +1,69 @@
+﻿@page "/watchlist"
+@inject AppDbContext Db
+@using Microsoft.EntityFrameworkCore
+@using MovieClone.Models
+@rendermode InteractiveServer
+
+<div class="container mt-4">
+    <h1><i class="bi bi-bookmark-star text-warning"></i> Your Watchlist</h1>
+    <p class="text-muted">Movies saved to your local database.</p>
+
+    @if (savedMovies == null)
+    {
+        <p>Loading...</p>
+    }
+    else if (!savedMovies.Any())
+    {
+        <div class="alert alert-info">Your watchlist is empty. Start adding movies from the home page!</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mt-3">
+                <thead>
+                    <tr>
+                        <th>Poster</th>
+                        <th>Title</th>
+                        <th>Rating</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var movie in savedMovies)
+                    {
+                        <tr>
+                            <td><img src="@movie.FullPosterUrl" style="width: 50px;" /></td>
+                            <td>@movie.Title</td>
+                            <td>⭐ @movie.VoteAverage.ToString("0.0")</td>
+                            <td>
+                                <button class="btn btn-outline-danger btn-sm" @onclick="() => RemoveMovie(movie.Id)">
+                                    Remove
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Movie>? savedMovies;
+
+    protected override async Task OnInitializedAsync()
+    {
+        savedMovies = await Db.Watchlist.ToListAsync();
+    }
+
+    private async Task RemoveMovie(int id)
+    {
+        var movie = await Db.Watchlist.FindAsync(id);
+        if (movie != null)
+        {
+            Db.Watchlist.Remove(movie);
+            await Db.SaveChangesAsync();
+            savedMovies = await Db.Watchlist.ToListAsync(); 
+        }
+    }
+}

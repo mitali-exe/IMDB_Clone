@@ -1,0 +1,104 @@
+﻿@page "/search"
+@using MovieClone.Models
+@using MovieClone.Services
+@inject MovieService MovieService
+@rendermode InteractiveServer
+
+<PageTitle>Search Movies - IMDb Clone</PageTitle>
+
+<div class="container-fluid py-4">
+    <div class="search-box-container mb-5">
+        <h2 class="text-warning fw-bold mb-3">Search Movies</h2>
+        <div class="input-group mb-3 shadow-lg">
+            <input type="text" class="form-control bg-dark text-white border-secondary"
+                   placeholder="Search for a movie title..."
+                   @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+            <button class="btn btn-warning fw-bold" @onclick="ExecuteSearch">
+                <i class="bi bi-search"></i> Search
+            </button>
+        </div>
+    </div>
+
+    @if (isSearching)
+    {
+        <div class="text-center my-5">
+            <div class="spinner-border text-warning" role="status"></div>
+        </div>
+    }
+    else if (searchResults != null)
+    {
+        @if (!searchResults.Any())
+        {
+            <div class="alert alert-dark">No movies found for "@searchQuery".</div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var movie in searchResults)
+                {
+                    <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+                        @* Reusing the card structure *@
+                        <div class="card movie-card h-100 border-0 bg-transparent">
+                            <div class="poster-container" @onclick="() => OpenModal(movie)">
+                                <img src="@movie.FullPosterUrl" class="card-img rounded shadow" alt="@movie.Title">
+                            </div>
+                            <div class="card-body px-0 pt-2">
+                                <div class="d-flex align-items-center mb-1">
+                                    <i class="bi bi-star-fill text-warning me-1 small"></i>
+                                    <span class="text-white fw-bold">@movie.VoteAverage.ToString("0.0")</span>
+                                </div>
+                                <h6 class="text-white text-truncate">@movie.Title</h6>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@* Reuse the Modal from Home.razor here *@
+@if (selectedMovie != null) { /* Insert Modal Code from Home.razor here */ }
+
+<style>
+    .form-control:focus {
+        background-color: #2b2b2b !important;
+        border-color: #f5c518;
+        box-shadow: 0 0 0 0.25rem rgba(245, 197, 24, 0.25);
+        color: white;
+    }
+
+    .movie-card:hover {
+        transform: translateY(-5px);
+        transition: 0.2s;
+    }
+
+    .poster-container:hover {
+        filter: brightness(1.2);
+        cursor: pointer;
+    }
+</style>
+
+@code {
+    private string searchQuery = "";
+    private List<Movie>? searchResults;
+    private bool isSearching = false;
+    private Movie? selectedMovie;
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await ExecuteSearch();
+    }
+
+    private async Task ExecuteSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchQuery)) return;
+
+        isSearching = true;
+        searchResults = await MovieService.SearchMoviesAsync(searchQuery);
+        isSearching = false;
+    }
+
+    private void OpenModal(Movie movie) => selectedMovie = movie;
+    private void CloseModal() => selectedMovie = null;
+}

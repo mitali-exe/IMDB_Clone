@@ -1,0 +1,297 @@
+﻿@page "/"
+@using MovieClone.Models
+@using MovieClone.Services
+@inject MovieService MovieService
+@rendermode InteractiveServer
+
+<PageTitle>IMDb Clone - Browse Movies</PageTitle>
+
+@* --- Notification Toast --- *@
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="status-toast @statusClass shadow-lg">
+        <div class="d-flex align-items-center">
+            <i class="bi @(statusClass == "success" ? "bi-check-circle-fill" : "bi-exclamation-circle-fill") me-2"></i>
+            <span>@statusMessage</span>
+        </div>
+    </div>
+}
+
+<div class="container-fluid py-4">
+    <h2 class="text-warning mb-4 fw-bold"><i class="bi bi-fire me-2"></i>Trending This Week</h2>
+
+    @if (movies == null)
+    {
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border text-warning" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var movie in movies)
+            {
+                <div class="col-6 col-md-4 col-lg-3 col-xl-2">
+                    <div class="card movie-card h-100 border-0 bg-transparent">
+                        @* Poster Clickable Area *@
+                        <div class="poster-container" @onclick="() => OpenModal(movie)">
+                            <img src="@movie.FullPosterUrl" class="card-img p-0 rounded shadow" alt="@movie.Title">
+                        </div>
+                        
+                        <div class="card-body px-0 pt-2">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-star-fill text-warning me-1 small"></i>
+                                <span class="text-white fw-bold">@movie.VoteAverage.ToString("0.0")</span>
+                            </div>
+                            <h6 class="card-title text-white text-truncate mb-2" title="@movie.Title">@movie.Title</h6>
+                            
+                            <button class="btn btn-secondary btn-sm w-100 watchlist-btn" @onclick="() => AddToWatchlist(movie)">
+                                <i class="bi bi-plus-lg me-1"></i> Watchlist
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex justify-content-center my-5">
+    @if (isLoading)
+    {
+        <div class="spinner-border text-warning" role="status"></div>
+    }
+    else
+    {
+        <button class="btn btn-outline-warning fw-bold px-5 py-2" @onclick="LoadMovies">
+            Load More Movies
+        </button>
+    }
+</div>
+    }
+</div>
+
+@* --- Details Popup Modal --- *@
+@if (selectedMovie != null)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-secondary shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-warning fw-bold">@selectedMovie.Title</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-5 mb-3 mb-md-0">
+    @if (!string.IsNullOrEmpty(trailerKey))
+    {
+        <div class="ratio ratio-16x9 shadow rounded overflow-hidden mb-3">
+            <iframe src="https://www.youtube.com/embed/@trailerKey?rel=0" 
+                    title="YouTube video player" 
+                    allowfullscreen></iframe>
+        </div>
+        <p class="text-center text-muted small"><i class="bi bi-info-circle me-1"></i> Official Trailer</p>
+    }
+    else
+    {
+        <img src="@selectedMovie.FullPosterUrl" class="img-fluid rounded shadow" />
+    }
+</div>
+                        <div class="col-md-7">
+                            <div class="mb-3">
+                                <span class="badge bg-warning text-dark me-2">⭐ @selectedMovie.VoteAverage.ToString("0.0")</span>
+                                <span class="text-secondary small">TMDB ID: @selectedMovie.TmdbId</span>
+                            </div>
+                            <h5 class="fw-bold text-white">Overview</h5>
+                            <p class="text-secondary" style="line-height: 1.6;">@selectedMovie.Overview</p>
+
+                            @* --- GENRES PLACED HERE --- *@
+    <div class="mt-4 mb-3">
+        <h6 class="text-white-50 small text-uppercase fw-bold mb-2">Genres</h6>
+        <div class="d-flex flex-wrap gap-2">
+            @foreach (var genre in MovieService.GetGenreNames(selectedMovie.GenreIds))
+            {
+                <span class="badge rounded-pill border border-secondary text-light fw-normal">@genre</span>
+            }
+        </div>
+    </div>
+
+    <hr class="border-secondary my-4">
+<h6 class="text-warning fw-bold mb-3">Top Cast</h6>
+<div class="d-flex overflow-auto pb-3 cast-container">
+    @foreach (var actor in movieCast)
+    {
+        <div class="text-center me-4" style="min-width: 100px;">
+            <img src="@actor.ProfileImageUrl" 
+                 class="rounded-circle shadow mb-2" 
+                 style="width: 80px; height: 80px; object-fit: cover; border: 2px solid #333;" />
+            <div class="small fw-bold text-white text-truncate" style="max-width: 100px;">@actor.Name</div>
+            <div class="small text-muted text-truncate" style="max-width: 100px;">@actor.Character</div>
+        </div>
+    }
+</div>
+                            
+                            
+                            <div class="mt-4">
+                                <button class="btn btn-warning fw-bold px-4 me-2" @onclick="() => AddToWatchlist(selectedMovie)">
+                                    <i class="bi bi-plus-lg"></i> Add to Watchlist
+                                </button>
+                                <button class="btn btn-outline-light px-4" @onclick="CloseModal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    /* Poster & Card Styling */
+    .movie-card {
+        transition: transform 0.2s ease;
+    }
+    .movie-card:hover {
+        transform: translateY(-5px);
+    }
+    .poster-container {
+        cursor: pointer;
+        overflow: hidden;
+        border-radius: 8px;
+        transition: filter 0.2s;
+    }
+    .poster-container:hover {
+        filter: brightness(1.2);
+    }
+
+    /* Watchlist Button Styling */
+    .watchlist-btn {
+        background-color: #2c2c2c;
+        border: none;
+        color: #5799ef;
+        font-weight: 600;
+    }
+    .watchlist-btn:hover {
+        background-color: #3d3d3d !important;
+        color: #f5c518 !important;
+    }
+
+    .ratio-16x9 {
+    --bs-aspect-ratio: 56.25%;
+    position: relative;
+    width: 100%;
+}
+.ratio iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+
+.cast-container {
+    scrollbar-width: thin;
+    scrollbar-color: #f5c518 #1a1a1a;
+}
+
+.cast-container::-webkit-scrollbar {
+    height: 6px;
+}
+
+.cast-container::-webkit-scrollbar-thumb {
+    background: #f5c518;
+    border-radius: 10px;
+}
+
+.cast-container::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+
+    /* Toast Notification */
+    .status-toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 3000;
+        padding: 12px 24px;
+        border-radius: 4px;
+        color: white;
+        animation: slideIn 0.4s ease forwards;
+    }
+    .status-toast.success { background-color: #198754; border-left: 5px solid #f5c518; }
+    .status-toast.warning { background-color: #333; border-left: 5px solid #f5c518; color: #f5c518; }
+
+    @((MarkupString)"@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }")
+
+    /* Modal Styling */
+    .modal-content { border-radius: 15px; }
+    .modal-backdrop { background-color: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
+</style>
+
+@code {
+    private List<Movie>? movies = new();
+    private Movie? selectedMovie;
+    private string? statusMessage;
+    private string statusClass = "success";
+    private int currentPage = 1;
+    private bool isLoading = false;
+    private string? trailerKey;
+
+    private List<CastMember> movieCast = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMovies();
+    }
+
+    private async Task LoadMovies()
+{
+    isLoading = true;
+    var newMovies = await MovieService.GetTrendingMoviesAsync(currentPage);
+    
+    // Use AddRange to append the 20 new movies to our existing list
+    movies.AddRange(newMovies);
+    
+    isLoading = false;
+    currentPage++; // Prepare for the next fetch
+}
+
+    private async Task OpenModal(Movie movie)
+{
+    selectedMovie = movie;
+    // Fetch trailer and cast simultaneously for speed
+    var trailerTask = MovieService.GetMovieTrailerKeyAsync(movie.TmdbId);
+    var castTask = MovieService.GetMovieCastAsync(movie.TmdbId);
+    
+    trailerKey = await trailerTask;
+    movieCast = await castTask;
+}
+
+    private void CloseModal()
+{
+    selectedMovie = null;
+    trailerKey = null; // Important: stops the video from playing in the background
+}
+
+    private async Task AddToWatchlist(Movie movie)
+    {
+        bool wasAdded = await MovieService.SaveToWatchlist(movie);
+
+        statusMessage = wasAdded 
+            ? $"Added {movie.Title} to your watchlist" 
+            : $"{movie.Title} is already in your watchlist";
+        
+        statusClass = wasAdded ? "success" : "warning";
+
+        StateHasChanged();
+        await Task.Delay(3000);
+        statusMessage = null;
+        StateHasChanged();
+    }
+}

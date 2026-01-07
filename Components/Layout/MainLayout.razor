@@ -1,0 +1,41 @@
+﻿@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<style>
+    /* Force the layout to be side-by-side */
+    .page {
+        display: flex;
+        flex-direction: row;
+        min-height: 100vh;
+    }
+
+    main {
+        flex: 1;
+        background-color: #000000; /* Deep black for movie background */
+        color: white;
+    }
+
+    .sidebar {
+        width: 250px;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        background-color: #121212;
+        border-right: 1px solid #333;
+    }
+
+    .content {
+        padding-top: 2rem;
+    }
+</style>
