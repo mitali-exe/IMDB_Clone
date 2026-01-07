@@ -114,7 +114,7 @@ main[b-jcquv21zy8] {
     font-size: 1.3rem;
 }
 
-/* Remove default Blazor padding/styles that cause white space */
+
 .nav-item[b-bmis6f87j4]  a {
     color: #ffffff !important;
     padding: 12px 16px;

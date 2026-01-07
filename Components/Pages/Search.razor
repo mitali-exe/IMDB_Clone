@@ -6,6 +6,16 @@
 
 <PageTitle>Search Movies - IMDb Clone</PageTitle>
 
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="status-toast @statusClass shadow-lg">
+        <div class="d-flex align-items-center">
+            <i class="bi @(statusClass == "success" ? "bi-check-circle-fill" : "bi-exclamation-circle-fill") me-2"></i>
+            <span>@statusMessage</span>
+        </div>
+    </div>
+}
+
 <div class="container-fluid py-4">
     <div class="search-box-container mb-5">
         <h2 class="text-warning fw-bold mb-3">Search Movies</h2>
@@ -58,7 +68,81 @@
 </div>
 
 @* Reuse the Modal from Home.razor here *@
-@if (selectedMovie != null) { /* Insert Modal Code from Home.razor here */ }
+@if (selectedMovie != null)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal fade show d-block" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark text-white border-secondary shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title text-warning fw-bold">@selectedMovie.Title</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-5 mb-3 mb-md-0">
+                            @if (!string.IsNullOrEmpty(trailerKey))
+                            {
+                                <div class="ratio ratio-16x9 shadow rounded overflow-hidden mb-3">
+                                    <iframe src="https://www.youtube.com/embed/@trailerKey?rel=0"
+                                            title="YouTube video player"
+                                            allowfullscreen></iframe>
+                                </div>
+                                <p class="text-center text-muted small"><i class="bi bi-info-circle me-1"></i> Official Trailer</p>
+                            }
+                            else
+                            {
+                                <img src="@selectedMovie.FullPosterUrl" class="img-fluid rounded shadow" />
+                            }
+                        </div>
+                        <div class="col-md-7">
+                            <div class="mb-3">
+                                <span class="badge bg-warning text-dark me-2">⭐ @selectedMovie.VoteAverage.ToString("0.0")</span>
+                                <span class="text-secondary small">TMDB ID: @selectedMovie.TmdbId</span>
+                            </div>
+                            <h5 class="fw-bold text-white">Overview</h5>
+                            <p class="text-secondary" style="line-height: 1.6;">@selectedMovie.Overview</p>
+
+
+                            <div class="mt-4 mb-3">
+                                <h6 class="text-white-50 small text-uppercase fw-bold mb-2">Genres</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var genre in MovieService.GetGenreNames(selectedMovie.GenreIds))
+                                    {
+                                        <span class="badge rounded-pill border border-secondary text-light fw-normal">@genre</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <hr class="border-secondary my-4">
+                            <h6 class="text-warning fw-bold mb-3">Top Cast</h6>
+                            <div class="d-flex overflow-auto pb-3 cast-container">
+                                @foreach (var actor in movieCast)
+                                {
+                                    <div class="text-center me-4" style="min-width: 100px;">
+                                        <img src="@actor.ProfileImageUrl"
+                                             class="rounded-circle shadow mb-2"
+                                             style="width: 80px; height: 80px; object-fit: cover; border: 2px solid #333;" />
+                                        <div class="small fw-bold text-white text-truncate" style="max-width: 100px;">@actor.Name</div>
+                                        <div class="small text-muted text-truncate" style="max-width: 100px;">@actor.Character</div>
+                                    </div>
+                                }
+                            </div>
+
+
+                            <div class="mt-4">
+                                <button class="btn btn-warning fw-bold px-4 me-2" @onclick="() => AddToWatchlist(selectedMovie)">
+                                    <i class="bi bi-plus-lg"></i> Add to Watchlist
+                                </button>
+                                <button class="btn btn-outline-light px-4" @onclick="CloseModal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 <style>
     .form-control:focus {
@@ -77,6 +161,39 @@
         filter: brightness(1.2);
         cursor: pointer;
     }
+
+    /* Toast Notification */
+    .status-toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 3000;
+        padding: 12px 24px;
+        border-radius: 4px;
+        color: white;
+        animation: slideIn 0.4s ease forwards;
+    }
+
+        .status-toast.success {
+            background-color: #198754;
+            border-left: 5px solid #f5c518;
+        }
+
+        .status-toast.warning {
+            background-color: #333;
+            border-left: 5px solid #f5c518;
+            color: #f5c518;
+        }
+
+    /* Modal Styling */
+    .modal-content {
+        border-radius: 15px;
+    }
+
+    .modal-backdrop {
+        background-color: rgba(0,0,0,0.85);
+        backdrop-filter: blur(4px);
+    }
 </style>
 
 @code {
@@ -84,6 +201,15 @@
     private List<Movie>? searchResults;
     private bool isSearching = false;
     private Movie? selectedMovie;
+
+    private List<Movie>? movies = new();
+    private string? statusMessage;
+    private string statusClass = "success";
+    private int currentPage = 1;
+    private bool isLoading = false;
+    private string? trailerKey;
+
+    private List<CastMember> movieCast = new();
 
     private async Task HandleKeyUp(KeyboardEventArgs e)
     {
@@ -99,6 +225,54 @@
         isSearching = false;
     }
 
-    private void OpenModal(Movie movie) => selectedMovie = movie;
-    private void CloseModal() => selectedMovie = null;
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMovies();
+    }
+
+    private async Task LoadMovies()
+    {
+        isLoading = true;
+        var newMovies = await MovieService.GetTrendingMoviesAsync(currentPage);
+
+        movies.AddRange(newMovies);
+
+        isLoading = false;
+        currentPage++;
+    }
+
+
+    private async Task OpenModal(Movie movie)
+    {
+        selectedMovie = movie;
+        var trailerTask = MovieService.GetMovieTrailerKeyAsync(movie.TmdbId);
+        var castTask = MovieService.GetMovieCastAsync(movie.TmdbId);
+
+        trailerKey = await trailerTask;
+        movieCast = await castTask;
+    }
+
+    private void CloseModal()
+    {
+        selectedMovie = null;
+        trailerKey = null;
+    }
+
+    private async Task AddToWatchlist(Movie movie)
+    {
+        bool wasAdded = await MovieService.SaveToWatchlist(movie);
+
+        statusMessage = wasAdded
+            ? $"Added {movie.Title} to your watchlist"
+            : $"{movie.Title} is already in your watchlist";
+
+        statusClass = wasAdded ? "success" : "warning";
+
+        StateHasChanged();
+        await Task.Delay(3000);
+        statusMessage = null;
+        StateHasChanged();
+    }
+
+
 }

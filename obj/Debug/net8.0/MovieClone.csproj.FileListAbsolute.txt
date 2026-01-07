@@ -168,3 +168,4 @@ C:\Users\mitali.srivastav\source\repos\MovieClone\MovieClone\obj\Debug\net8.0\re
 C:\Users\mitali.srivastav\source\repos\MovieClone\MovieClone\obj\Debug\net8.0\MovieClone.pdb
 C:\Users\mitali.srivastav\source\repos\MovieClone\MovieClone\obj\Debug\net8.0\MovieClone.genruntimeconfig.cache
 C:\Users\mitali.srivastav\source\repos\MovieClone\MovieClone\obj\Debug\net8.0\ref\MovieClone.dll
+C:\Users\mitali.srivastav\source\repos\MovieClone\MovieClone\obj\Debug\net8.0\MovieClone.sourcelink.json

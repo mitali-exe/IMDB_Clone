@@ -6,7 +6,7 @@
 
 <PageTitle>IMDb Clone - Browse Movies</PageTitle>
 
-@* --- Notification Toast --- *@
+
 @if (!string.IsNullOrEmpty(statusMessage))
 {
     <div class="status-toast @statusClass shadow-lg">
@@ -107,7 +107,7 @@
                             <h5 class="fw-bold text-white">Overview</h5>
                             <p class="text-secondary" style="line-height: 1.6;">@selectedMovie.Overview</p>
 
-                            @* --- GENRES PLACED HERE --- *@
+                            
     <div class="mt-4 mb-3">
         <h6 class="text-white-50 small text-uppercase fw-bold mb-2">Genres</h6>
         <div class="d-flex flex-wrap gap-2">
@@ -255,17 +255,15 @@
     isLoading = true;
     var newMovies = await MovieService.GetTrendingMoviesAsync(currentPage);
     
-    // Use AddRange to append the 20 new movies to our existing list
     movies.AddRange(newMovies);
     
     isLoading = false;
-    currentPage++; // Prepare for the next fetch
+    currentPage++;
 }
 
     private async Task OpenModal(Movie movie)
 {
     selectedMovie = movie;
-    // Fetch trailer and cast simultaneously for speed
     var trailerTask = MovieService.GetMovieTrailerKeyAsync(movie.TmdbId);
     var castTask = MovieService.GetMovieCastAsync(movie.TmdbId);
     
@@ -276,7 +274,7 @@
     private void CloseModal()
 {
     selectedMovie = null;
-    trailerKey = null; // Important: stops the video from playing in the background
+    trailerKey = null; 
 }
 
     private async Task AddToWatchlist(Movie movie)

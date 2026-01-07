@@ -19,7 +19,6 @@ namespace MovieClone.Services
         {
             try
             {
-                // Added &page= parameter to the URL
                 var response = await _http.GetFromJsonAsync<TmdbResponse>(
                     $"https://api.themoviedb.org/3/trending/movie/week?api_key={ApiKey}&page={page}");
 
@@ -53,12 +52,10 @@ namespace MovieClone.Services
 
         public async Task<bool> SaveToWatchlist(Movie movie)
         {
-            // Check if it already exists to prevent duplicates
             var exists = await _db.Watchlist.AnyAsync(m => m.TmdbId == movie.TmdbId);
 
             if (!exists)
             {
-                // Create a new object to avoid tracking issues with the ID
                 var movieToSave = new Movie
                 {
                     TmdbId = movie.TmdbId,
@@ -70,10 +67,10 @@ namespace MovieClone.Services
 
                 _db.Watchlist.Add(movieToSave);
                 await _db.SaveChangesAsync();
-                return true; // Successfully added
+                return true; 
             }
 
-            return false; // Already in watchlist
+            return false; 
         }
 
         private static readonly Dictionary<int, string> GenreMap = new()
@@ -98,7 +95,7 @@ namespace MovieClone.Services
                 var response = await _http.GetFromJsonAsync<VideoResponse>(
                     $"https://api.themoviedb.org/3/movie/{tmdbId}/videos?api_key={ApiKey}");
 
-                // Find the first video that is a "Trailer" on "YouTube"
+                
                 var trailer = response?.Results.FirstOrDefault(v =>
                     v.Site == "YouTube" && v.Type == "Trailer");
 
@@ -110,7 +107,6 @@ namespace MovieClone.Services
             }
         }
 
-        // Supporting classes for the video API response
         public class VideoResponse { public List<VideoResult> Results { get; set; } = new(); }
         public class VideoResult
         {
