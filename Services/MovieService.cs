@@ -7,10 +7,10 @@ namespace MovieClone.Services
     {
         private readonly HttpClient _http;
         private readonly AppDbContext _db;
-        private const string ApiKey = "YOUR_API_KEY";
+        private const string ApiKey = "f5dd7e4a1ad8295c7ce5056daa32e686";
 
         public MovieService(HttpClient http, AppDbContext db)
-        {
+        { 
             _http = http;
             _db = db;
         }

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MovieClone")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7690609c9708d6e66f78ec1dd62c78eb3e9e0e76")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+69480fa6ee3774a34a998a6d6ac21c41e8857852")]
 [assembly: System.Reflection.AssemblyProductAttribute("MovieClone")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MovieClone")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
